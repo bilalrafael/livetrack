@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Halaman Sopir - Kirim Lokasi</title>
+</head>
+<body>
+  <h2>Halaman Sopir</h2>
+  <p id="status">Menunggu lokasi...</p>
+  <p id="coords"></p>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBL_Cu0obd_Y5MegzX03x56NVcnZW93dL0",
+      authDomain: "livetracking-357fa.firebaseapp.com",
+      databaseURL: "https://livetracking-357fa-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "livetracking-357fa",
+      storageBucket: "livetracking-357fa.appspot.com",
+      messagingSenderId: "185453934325",
+      appId: "1:185453934325:web:de9f7e41bfad0f1e83b7bc",
+      measurementId: "G-8SYF9L8ZCD"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const statusText = document.getElementById("status");
+    const coordsText = document.getElementById("coords");
+
+    function updateLocation() {
+      if (!navigator.geolocation) {
+        statusText.textContent = "Geolocation tidak didukung oleh browser.";
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          set(ref(db, "bus/location"), {
+            latitude: lat,
+            longitude: lng
+          })
+          .then(() => {
+            statusText.textContent = "Sedang mengirim lokasi ke Firebase...";
+            coordsText.textContent = `Latitude: ${lat}, Longitude: ${lng}`;
+          })
+          .catch((error) => {
+            statusText.textContent = "Gagal mengirim lokasi ke Firebase.";
+            console.error(error);
+          });
+        },
+        (error) => {
+          statusText.textContent = "Gagal mendapatkan lokasi: " + error.message;
+        }
+      );
+    }
+
+    // Kirim setiap 5 detik
+    setInterval(updateLocation, 5000);
+  </script>
+</body>
+</html>

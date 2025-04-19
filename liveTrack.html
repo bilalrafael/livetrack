@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lacak Bus</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    #map { height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Firebase SDK + Leaflet -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBL_Cu0obd_Y5MegzX03x56NVcnZW93dL0",  // API key sebaiknya disembunyikan
+      authDomain: "livetracking-357fa.firebaseapp.com",
+      databaseURL: "https://livetracking-357fa-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "livetracking-357fa",
+      storageBucket: "livetracking-357fa.firebasestorage.app",
+      messagingSenderId: "185453934325",
+      appId: "1:185453934325:web:de9f7e41bfad0f1e83b7bc",
+      measurementId: "G-8SYF9L8ZCD"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let marker;
+    let map;
+
+    // Fungsi untuk update posisi peta dan marker
+    const updateMap = (latitude, longitude) => {
+      if (!map) {
+        // Set map awal jika belum ada
+        map = L.map('map').setView([latitude, longitude], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+      }
+
+      if (marker) {
+        marker.setLatLng([latitude, longitude]);  // Update posisi marker
+      } else {
+        marker = L.marker([latitude, longitude]).addTo(map);  // Tambah marker jika belum ada
+      }
+
+      map.setView([latitude, longitude], 15);  // Update tampilan peta
+    };
+
+    // Mengambil data lokasi bus dari Firebase secara real-time
+    const locationRef = ref(db, 'bus/location');
+    onValue(locationRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const { latitude, longitude } = data;
+        console.log("Lokasi Bus:", latitude, longitude); // Debugging data
+
+        // Update map dan marker dengan data lokasi terbaru
+        updateMap(latitude, longitude);
+      }
+    });
+  </script>
+
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+</body>
+</html>
