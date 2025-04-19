@@ -1,69 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Halaman Sopir - Kirim Lokasi</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Halaman Sopir - Kirim Lokasi</title>
 </head>
 <body>
-  <h2>Halaman Sopir</h2>
-  <p id="status">Menunggu lokasi...</p>
-  <p id="coords"></p>
+  <h2>Halaman Sopir</h2>
+  <p id="status">Menunggu lokasi...</p>
+  <p id="coords"></p>
 
-  <!-- Firebase SDK -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBL_Cu0obd_Y5MegzX03x56NVcnZW93dL0",
-      authDomain: "livetracking-357fa.firebaseapp.com",
-      databaseURL: "https://livetracking-357fa-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "livetracking-357fa",
-      storageBucket: "livetracking-357fa.appspot.com",
-      messagingSenderId: "185453934325",
-      appId: "1:185453934325:web:de9f7e41bfad0f1e83b7bc",
-      measurementId: "G-8SYF9L8ZCD"
-    };
+    const firebaseConfig = {
+            apiKey: "AIzaSyBL_Cu0obd_Y5MegzX03x56NVcnZW93dL0",
+      authDomain: "livetracking-357fa.firebaseapp.com",
+      databaseURL: "https://livetracking-357fa-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "livetracking-357fa",
+      storageBucket: "livetracking-357fa.appspot.com",
+      messagingSenderId: "185453934325",
+      appId: "1:185453934325:web:de9f7e41bfad0f1e83b7bc",
+      measurementId: "G-8SYF9L8ZCD"
+    };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-    const statusText = document.getElementById("status");
-    const coordsText = document.getElementById("coords");
+    const statusText = document.getElementById("status");
+    const coordsText = document.getElementById("coords");
 
-    function updateLocation() {
-      if (!navigator.geolocation) {
-        statusText.textContent = "Geolocation tidak didukung oleh browser.";
-        return;
-      }
+    function kirimLokasi(lat, lng) {
+      set(ref(db, "bus/location"), {
+        latitude: lat,
+        longitude: lng
+      }).then(() => {
+        statusText.textContent = "Sedang mengirim lokasi ke Firebase...";
+        coordsText.textContent = `Latitude: ${lat}, Longitude: ${lng}`;
+      }).catch((error) => {
+        statusText.textContent = "Gagal mengirim lokasi ke Firebase.";
+        console.error(error);
+      });
+    }
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
+    if ("geolocation" in navigator) {
+      statusText.textContent = "Memulai pelacakan lokasi...";
 
-          set(ref(db, "bus/location"), {
-            latitude: lat,
-            longitude: lng
-          })
-          .then(() => {
-            statusText.textContent = "Sedang mengirim lokasi ke Firebase...";
-            coordsText.textContent = `Latitude: ${lat}, Longitude: ${lng}`;
-          })
-          .catch((error) => {
-            statusText.textContent = "Gagal mengirim lokasi ke Firebase.";
-            console.error(error);
-          });
-        },
-        (error) => {
-          statusText.textContent = "Gagal mendapatkan lokasi: " + error.message;
-        }
-      );
-    }
-
-    // Kirim setiap 5 detik
-    setInterval(updateLocation, 2000);
-  </script>
+      navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          kirimLokasi(lat, lng);
+        },
+        (err) => {
+          statusText.textContent = "Gagal mendapatkan lokasi: " + err.message;
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 10000
+        }
+      );
+    } else {
+      statusText.textContent = "Geolocation tidak didukung browser ini.";
+    }
+  </script>
 </body>
 </html>
