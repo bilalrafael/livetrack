@@ -4,69 +4,83 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Lacak Bus</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-sA+e2Xk6Dc9u1Q9qv+HjCkScZRy+bMi0sA5vFvKRa0I="
+    crossorigin=""
+  />
   <style>
-    #map { height: 100vh; }
+    /* Penuh layar */
+    #map { height: 100vh; margin: 0; padding: 0; }
+    body { margin: 0; padding: 0; }
   </style>
 </head>
 <body>
   <div id="map"></div>
 
-  <!-- Firebase SDK + Leaflet -->
+  <!-- Firebase SDK (modular) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
+    // 1) Inisialisasi Firebase
     const firebaseConfig = {
-      apiKey: "AIzaSyBL_Cu0obd_Y5MegzX03x56NVcnZW93dL0",  // API key sebaiknya disembunyikan
+            apiKey: "AIzaSyBL_Cu0obd_Y5MegzX03x56NVcnZW93dL0",  // API key sebaiknya disembunyikan
       authDomain: "livetracking-357fa.firebaseapp.com",
       databaseURL: "https://livetracking-357fa-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "livetracking-357fa",
-      storageBucket: "livetracking-357fa.firebasestorage.app",
+      storageBucket: "livetracking-357fa.appspot.com",
       messagingSenderId: "185453934325",
       appId: "1:185453934325:web:de9f7e41bfad0f1e83b7bc",
       measurementId: "G-8SYF9L8ZCD"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    let marker;
-    let map;
+    // 2) Inisialisasi Peta
+    const map = L.map('map').setView([0, 0], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map);
 
-    // Fungsi untuk update posisi peta dan marker
-    const updateMap = (latitude, longitude) => {
-      if (!map) {
-        // Set map awal jika belum ada
-        map = L.map('map').setView([latitude, longitude], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-      }
+    // 3) Siapkan ikon mobil
+    const carIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/61/61168.png',
+      iconSize:     [32, 32],  // lebar, tinggi
+      iconAnchor:   [16, 16],  // titik anchor di tengah ikon
+    });
 
-      if (marker) {
-        marker.setLatLng([latitude, longitude]);  // Update posisi marker
-      } else {
-        marker = L.marker([latitude, longitude]).addTo(map);  // Tambah marker jika belum ada
-      }
+    let marker = null;  // nanti akan kita inisialisasi pada data pertama
 
-      map.setView([latitude, longitude], 15);  // Update tampilan peta
-    };
-
-    // Mengambil data lokasi bus dari Firebase secara real-time
+    // 4) Listen data realtime dari Firebase
     const locationRef = ref(db, 'bus/location');
     onValue(locationRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-        const { latitude, longitude } = data;
-        console.log("Lokasi Bus:", latitude, longitude); // Debugging data
+      if (!data) return;  // kalau belum ada data
 
-        // Update map dan marker dengan data lokasi terbaru
-        updateMap(latitude, longitude);
+      const { latitude, longitude } = data;
+
+      // Jika ini data pertama, buat marker baru
+      if (!marker) {
+        marker = L.marker([latitude, longitude], { icon: carIcon }).addTo(map);
+      } else {
+        // Kalau sudah ada, cukup update posisinya
+        marker.setLatLng([latitude, longitude]);
       }
+
+      // Center peta ke lokasi terbaru
+      map.setView([latitude, longitude], 15);
     });
   </script>
 
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <!-- Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-o9N1jJ9g8GS6E5O3ed0eI5mV9h3k7R3jYChYDMpXtG8="
+    crossorigin="">
+  </script>
 </body>
 </html>
