@@ -3,31 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Lacak Bus</title>
-  <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-sA+e2Xk6Dc9u1Q9qv+HjCkScZRy+bMi0sA5vFvKRa0I="
-    crossorigin=""
-  />
+  <title>Live Tracking - Lihat Lokasi</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    /* Penuh layar */
-    #map { height: 100vh; margin: 0; padding: 0; }
-    body { margin: 0; padding: 0; }
+    #map { height: 100vh; }
   </style>
 </head>
 <body>
   <div id="map"></div>
 
-  <!-- Firebase SDK (modular) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
-    // 1) Inisialisasi Firebase
     const firebaseConfig = {
-            apiKey: "AIzaSyBL_Cu0obd_Y5MegzX03x56NVcnZW93dL0",  // API key sebaiknya disembunyikan
+      apiKey: "AIzaSyBL_Cu0obd_Y5MegzX03x56NVcnZW93dL0",
       authDomain: "livetracking-357fa.firebaseapp.com",
       databaseURL: "https://livetracking-357fa-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "livetracking-357fa",
@@ -36,51 +27,39 @@
       appId: "1:185453934325:web:de9f7e41bfad0f1e83b7bc",
       measurementId: "G-8SYF9L8ZCD"
     };
+
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 2) Inisialisasi Peta
-    const map = L.map('map').setView([0, 0], 13);
+    const map = L.map('map').setView([-7.2575, 112.7521], 15); // ganti sesuai lokasi awal
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19
+      maxZoom: 18
     }).addTo(map);
 
-    // 3) Siapkan ikon mobil
+    // Ikon mobil
     const carIcon = L.icon({
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/61/61168.png',
-      iconSize:     [32, 32],  // lebar, tinggi
-      iconAnchor:   [16, 16],  // titik anchor di tengah ikon
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/744/744465.png',
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40]
     });
 
-    let marker = null;  // nanti akan kita inisialisasi pada data pertama
+    let marker;
 
-    // 4) Listen data realtime dari Firebase
-    const locationRef = ref(db, 'bus/location');
+    const locationRef = ref(db, "bus/location");
     onValue(locationRef, (snapshot) => {
       const data = snapshot.val();
-      if (!data) return;  // kalau belum ada data
+      const lat = data.latitude;
+      const lng = data.longitude;
 
-      const { latitude, longitude } = data;
-
-      // Jika ini data pertama, buat marker baru
-      if (!marker) {
-        marker = L.marker([latitude, longitude], { icon: carIcon }).addTo(map);
+      if (marker) {
+        marker.setLatLng([lat, lng]);
       } else {
-        // Kalau sudah ada, cukup update posisinya
-        marker.setLatLng([latitude, longitude]);
+        marker = L.marker([lat, lng], { icon: carIcon }).addTo(map);
       }
 
-      // Center peta ke lokasi terbaru
-      map.setView([latitude, longitude], 15);
+      map.setView([lat, lng]);
     });
-  </script>
-
-  <!-- Leaflet JS -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-o9N1jJ9g8GS6E5O3ed0eI5mV9h3k7R3jYChYDMpXtG8="
-    crossorigin="">
   </script>
 </body>
 </html>
